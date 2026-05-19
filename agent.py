@@ -21,7 +21,7 @@ LOCAL_OLLAMA_URL = "http://localhost:11434"
 SQLITE_DB_FILE = "chat_history.db"
 
 API_TOKEN = os.environ.get("API_TOKEN", "my_secret_token_731125")
-NEON_DATABASE_URL = os.environ.get("DATABASE_URL", "YOUR_NEON_CONNECTION_STRING_HERE")
+NEON_DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_cOan5sF7yRTU@ep-long-lake-aolrehwr.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require")
 
 # =====================================================================
 #  🌐 REAL-TIME LIVE INTERNET CONNECTIVITY CHECKER NODE
@@ -132,7 +132,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sender TEXT NOT NULL,
-            message_text TEXT NOT NULL,
+            message_text NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -330,10 +330,8 @@ st.markdown("""
         border: 1px solid rgba(128, 128, 128, 0.2);
         color: var(--text-color) !important;
         border-radius: 10px;
-        padding: 12px 18px;
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
+        padding: 6px 12px;
+        display: inline-block !important;
     }
     .custom-mic-box {
         display: flex !important;
@@ -379,6 +377,21 @@ st.markdown("""
         padding: 4px 8px !important; 
         height: 38px !important; 
     }
+    
+    /* HARD OVERRIDE FOR STTEXTINPUT COLOR BLINDNESS IN LIGHT/DARK TOGGLE */
+    .stTextInput div[data-baseweb="input"] {
+        background-color: var(--secondary-background-color) !important;
+        border: 1px solid rgba(128, 128, 128, 0.2) !important;
+    }
+    .stTextInput input {
+        color: var(--text-color) !important;
+        -webkit-text-fill-color: var(--text-color) !important;
+    }
+    .stTextInput input::placeholder {
+        color: var(--text-color) !important;
+        opacity: 0.6 !important;
+    }
+
     .stButton>button { 
         height: 38px !important; 
         border-radius: 18px !important; 
@@ -527,19 +540,18 @@ def handle_submission_callback():
 file_payload_string = ""
 voice_text_transcription = None
 
-# Custom Flex Wrapper using Native Grid Elements to ensure clean horizontal side-by-side alignment
+# Custom Layout Matrix Grid Elements
 col_file, col_mic, col_spacer = st.columns([3.8, 0.8, 7.4])
 
 with col_file:
-    st.markdown("<div class='custom-upload-box'>📂 <b style='color: var(--text-color);'>Upload Context</b>", unsafe_allow_html=True)
-    uploaded_doc = st.file_uploader("Upload", type=["txt", "json", "c", "py", "html", "csv"], key="gemini_file_node")
+    st.markdown("<div class='custom-upload-box'>📂 <b style='color: var(--text-color);'>Upload Context</b></div>", unsafe_allow_html=True)
+    uploaded_doc = st.file_uploader("Upload Context Node Link", type=["txt", "json", "c", "py", "html", "csv"], key="gemini_file_node", label_visibility="collapsed")
     if uploaded_doc is not None:
         try:
             file_raw = uploaded_doc.read().decode("utf-8", errors="ignore")
             file_payload_string = f"\n\n[SYSTEM ATTACHED FILE CONTEXT DETAILS:\nFilename: {uploaded_doc.name}\nContent:\n{file_raw}\n]"
         except Exception as e:
             st.error(f"Err: {str(e)}")
-    st.markdown("</div>", unsafe_allow_html=True)
 
 with col_mic:
     st.markdown("<div class='custom-mic-box'>", unsafe_allow_html=True)
@@ -549,31 +561,27 @@ with col_mic:
         st.session_state.active_payload = voice_text_transcription
     st.markdown("</div>", unsafe_allow_html=True)
 
-# --- STEP 1: ADD THIS NEW CSS BLOCK ON TOP ---
+# --- STEP 1: GLOBAL DESIGN VARIABLES INJECTION OVERRIDE ---
 st.markdown("""
 <style>
-    /* Target the text input container background globally */
+    /* Direct core widget overrides to force adaptive contrast backgrounds */
     .stTextInput div[data-baseweb="input"] {
-        background-color: var(--background-color) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        background-color: var(--secondary-background-color) !important;
+        border: 1px solid rgba(128, 128, 128, 0.25) !important;
+        border-radius: 24px !important;
     }
-
-    /* Target the actual input field text colors directly */
     .stTextInput input {
         color: var(--text-color) !important;
         -webkit-text-fill-color: var(--text-color) !important;
-        background-color: transparent !important;
     }
-
-    /* Target the placeholder text explicitly */
     .stTextInput input::placeholder {
         color: var(--text-color) !important;
         opacity: 0.6 !important;
     }
-    
-    /* Optional: Fix the form wrapper styling if needed */
     .premium-prompt-bar {
         background-color: transparent !important;
+        border: none !important;
+        padding: 0px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -634,7 +642,7 @@ CRITICAL MATHEMATICAL LATEX GUARDRAILS:
 CRITICAL MULTILINGUAL LANGUAGE MATRIX DIRECTIVE:
 - You understand English, Hindi, Bengali, Hinglish, and Benglish.
   1. If the user asks a question in Bengali OR romanized Benglish text, translate and reply 100% inside pure BENGALI SCRIPT (বাংলা হরফ) only.
-  2. If the user asks a question in Hindi OR romanized Hinglish text, translate and reply 100% inside pure HINDI SCRIPT (देवनागरी) only.
+  2. If the user asks a question in Hindi OR romanized Hinglish text, translate and reply 100% inside pure HINDI SCRIPT (देवনাगरी) only.
   3. If the user asks in standard English, reply in standard English.
 
 CURRENT NETWORK STATE STATUS:
