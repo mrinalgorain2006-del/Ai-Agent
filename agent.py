@@ -14,21 +14,17 @@ from streamlit_mic_recorder import speech_to_text
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # =====================================================================
-#  1. IDENTITY & ENVIRONMENT FALLBACK CONFIGURATION
+#  1. IDENTITY & ENVIRONMENT CONFIGURATION
 # =====================================================================
 LOCAL_OLLAMA_URL = "http://localhost:11434"
 SQLITE_DB_FILE = "chat_history.db"
 
 API_TOKEN = os.environ.get("API_TOKEN", "my_secret_token_731125")
-# FIXED: The string below is now properly closed on a single line so it won't break Python compile rules
 NEON_DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_cOan5sF7yRTU@ep-long-lake-aolrehwr.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require")
 
-# =====================================================================
-#  🌐 REAL-TIME LIVE INTERNET CONNECTIVITY CHECKER NODE
-# =====================================================================
+# Verify fallback online connectivity metrics
 def check_internet_connectivity():
     try:
-        # Pinging a highly stable public DNS server with a strict 2-second latency timeout
         requests.get("https://1.1.1.1", timeout=2)
         return True
     except (requests.ConnectionError, requests.Timeout):
@@ -37,9 +33,9 @@ def check_internet_connectivity():
 if "is_online" not in st.session_state:
     st.session_state.is_online = check_internet_connectivity()
 
-# Instantiating the correct Ollama compilation target based on cloud environment network availability
+# Secure fallback routing for cloud compilation instances
 if st.session_state.is_online:
-    client = Client(host="https://api.ollama.com" if "api.ollama.com" in os.environ else LOCAL_OLLAMA_URL)
+    client = Client(host="https://api.ollama.com")
 else:
     client = Client(host=LOCAL_OLLAMA_URL)
 
@@ -61,7 +57,7 @@ def render_login_screen():
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<div style='max-width: 450px; margin: 80px auto; padding: 30px; background-color: var(--secondary-background-color); border-radius: 15px; border: 1px solid rgba(128, 128, 128, 0.2); box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.05);'>", unsafe_allow_html=True)
+    st.markdown("<div style='max-width: 450px; margin: 80px auto; padding: 30px; background-color: var(--secondary-background-color); border-radius: 15px; border: 1px solid rgba(128, 128, 128, 0.2);'>", unsafe_allow_html=True)
     st.title("Login Security Access Control")
     st.caption("Enter credentials to unlock the Hybrid Agentic Workspace.")
     
@@ -128,7 +124,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sender TEXT NOT NULL,
-            message_text NOT NULL,
+            message_text TEXT NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
@@ -392,8 +388,7 @@ for message in st.session_state.chat_history:
         st.markdown(message["content"])
 
 # Quick Access Shortcut Pills
-pill_count = 3 if st.session_state.is_online else 2
-pill_cols = st.columns(pill_count)
+pill_cols = st.columns(3)
 with pill_cols[0]:
     if st.button("Auditing Error Logs", use_container_width=True): 
         st.session_state.gemini_text_box = "Explain structural error parameters in this file context:"
@@ -402,11 +397,10 @@ with pill_cols[1]:
     if st.button("Step-by-Step Math Solving", use_container_width=True): 
         st.session_state.gemini_text_box = "Solve this complex mathematical equation step-by-step:"
         st.rerun()
-if st.session_state.is_online:
-    with pill_cols[2]:
-        if st.button("Daily Live News Bulletins", use_container_width=True): 
-            st.session_state.gemini_text_box = "Give me international live current affairs updates"
-            st.rerun()
+with pill_cols[2]:
+    if st.button("Daily Live News Bulletins", use_container_width=True): 
+        st.session_state.gemini_text_box = "Give me international live current affairs updates"
+        st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
 
@@ -424,7 +418,7 @@ def handle_submission_callback():
 file_payload_string = ""
 voice_text_transcription = None
 
-col_file, col_mic, col_spacer = st.columns([5.0, 2.0, 5.0])
+col_file, col_mic, col_spacer = st.columns([5.0, 2.5, 4.5])
 
 with col_file:
     uploaded_doc = st.file_uploader("Upload Context", type=["txt", "json", "c", "py", "html", "csv"], key="gemini_file_node")
@@ -442,7 +436,7 @@ with col_mic:
         st.session_state.active_display = voice_text_transcription
         st.session_state.active_payload = voice_text_transcription
 
-# --- CSS STABILITY INJECTION OVERRIDE BLOCK ---
+# --- CORE PREMIUM CSS OVERRIDE SYSTEM ---
 st.markdown("""
 <style>
     /* Direct core widget text-input layout safety tracking specs */
@@ -459,22 +453,40 @@ st.markdown("""
         color: var(--text-color) !important;
         opacity: 0.5 !important;
     }
+    
+    /* Clean overrides for buttons preventing text wrapping issues */
+    div[data-testid="stFormSubmitButton"] button {
+        width: 100% !important;
+        white-space: nowrap !important;
+        min-width: 90px !important;
+    }
     div[data-testid="stForm"] {
         border: none !important;
         padding: 0px !important;
+    }
+    
+    /* High-end decorative left card accents */
+    .log-card { 
+        background-color: var(--secondary-background-color); 
+        color: var(--text-color); 
+        padding: 15px; 
+        border-radius: 10px; 
+        margin-bottom: 10px; 
+        border-left: 5px solid #4a90e2; 
+        border: 1px solid rgba(128, 128, 128, 0.15);
     }
 </style>
 """, unsafe_allow_html=True)
 
 # --- THE PROMPT INPUT FORM BAR ---
 with st.form("multimodal_prompt_form", clear_on_submit=True):
-    col_text_field, col_submit_rocket = st.columns([11.0, 1.0])
+    col_text_field, col_submit_button = st.columns([10.5, 1.5])
     
     with col_text_field:
         text_input_query = st.text_input("Prompt Box Field", placeholder="Ask Offline.Ai or utilize speech/document layers...", label_visibility="collapsed", key="gemini_text_box")
         
-    with col_submit_rocket:
-        submit_triggered = st.form_submit_button("Submit", on_click=handle_submission_callback, use_container_width=True)
+    with col_submit_button:
+        submit_triggered = st.form_submit_button("Submit", on_click=handle_submission_callback)
 
 if file_payload_string and st.session_state.active_payload:
     if not st.session_state.active_payload.endswith(file_payload_string):
@@ -563,12 +575,12 @@ If the request requires live data parameters, you MUST output a tool calling usi
                             t_arg = tool_call["argument"]
                             if cfg_verbose:
                                 running_logs += f"Thought Trace: AI deployed tool `{t_name}` for `{t_arg}`.\n\n"
-                                log_placeholder.markdown(f"<div style='background-color: var(--secondary-background-color); padding: 15px; border-radius: 10px;'>{running_logs}</div>", unsafe_allow_html=True)
+                                log_placeholder.markdown(f"<div class='log-card'>{running_logs}</div>", unsafe_allow_html=True)
                             final_text_output = tools_map[t_name](t_arg)
                             tool_executed = True
                             if cfg_verbose:
                                 running_logs += f"Data Returned Successfully.\n\n"
-                                log_placeholder.markdown(f"<div style='background-color: var(--secondary-background-color); padding: 15px; border-radius: 10px;'>{running_logs}</div>", unsafe_allow_html=True)
+                                log_placeholder.markdown(f"<div class='log-card'>{running_logs}</div>", unsafe_allow_html=True)
                             break
                     except json.JSONDecodeError:
                         break
