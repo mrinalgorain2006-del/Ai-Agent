@@ -20,7 +20,7 @@ LOCAL_OLLAMA_URL = "http://localhost:11434"
 SQLITE_DB_FILE = "chat_history.db"
 
 API_TOKEN = os.environ.get("API_TOKEN", "my_secret_token_731125")
-NEON_DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:npg_cOan5sF7yRTU@ep-long-lake-aolrehwr.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require")
+NEON_DATABASE_URL = os.environ.get("NEON_DATABASE_URL", "postgresql://neondb_owner:npg_cOan5sF7yRTU@ep-long-lake-aolrehwr.c-2.ap-southeast-1.aws.neon.tech/neondb?sslmode=require")
 
 # Verify fallback online connectivity metrics
 def check_internet_connectivity():
