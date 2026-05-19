@@ -446,23 +446,29 @@ with col_mic:
 # --- CORE PREMIUM CSS OVERRIDE SYSTEM ---
 st.markdown("""
 <style>
-    /* Absolute target to maintain input container background visibility across dark settings */
-    .stTextInput div[data-baseweb="input"] {
+    /* 1. FORCE INPUT BOX STYLE & VISIBILITY IN DARK & LIGHT MODE */
+    div[data-baseweb="input"] {
         background-color: var(--input-bg) !important;
         border: 1px solid rgba(128, 128, 128, 0.4) !important;
         border-radius: 14px !important;
         padding: 4px 12px !important;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
-    .stTextInput input {
+    
+    /* Target the text input element inside Streamlit's container */
+    div[data-baseweb="input"] input {
         color: var(--text-color) !important;
         -webkit-text-fill-color: var(--text-color) !important;
+        background-color: transparent !important;
     }
-    .stTextInput input::placeholder {
+    
+    /* Target placeholder text color rules directly */
+    div[data-baseweb="input"] input::placeholder {
         color: var(--text-color) !important;
         opacity: 0.5 !important;
     }
-    
-    /* Lock alignment variables of form submission buttons */
+
+    /* 2. FIX BUTTON WRAPPING & SPACING ALIGNMENT */
     div[data-testid="stFormSubmitButton"] button {
         width: 100% !important;
         white-space: nowrap !important;
@@ -471,11 +477,16 @@ st.markdown("""
         color: white !important;
         font-weight: bold !important;
         height: 46px !important;
+        border: none !important;
     }
+    
     div[data-testid="stForm"] {
         border: none !important;
         padding: 0px !important;
+        box-shadow: none !important;
     }
+    
+    /* 3. PREMIUM ACCENT CHAT/LOG CARDS */
     .log-card { 
         background-color: var(--secondary-background-color); 
         color: var(--text-color); 
