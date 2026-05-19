@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#ff4b4b"
+backgroundColor = "#ffffff"       # Pure white for light mode background
+secondaryBackgroundColor = "#f0f2f6" # Light gray for sidebars/widgets
+textColor = "#111111"             # Deep dark gray so all text is perfectly readable!
+font = "sans serif"
