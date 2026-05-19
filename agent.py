@@ -549,7 +549,27 @@ with col_mic:
         st.session_state.active_payload = voice_text_transcription
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Main Action Input Form Bar (Positioned cleanly below the attachment layout blocks)
+# --- STEP 1: ADD THIS NEW CSS BLOCK ON TOP ---
+st.markdown("""
+<style>
+    /* Force the text input box background and text to adjust dynamically */
+    div[data-baseweb="input"] {
+        background-color: var(--background-color) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    div[data-baseweb="input"] input {
+        color: var(--text-color) !important;
+        -webkit-text-fill-color: var(--text-color) !important;
+    }
+    /* Style placeholder text so it's readable in both modes */
+    div[data-baseweb="input"] input::placeholder {
+        color: var(--text-color) !important;
+        opacity: 0.6;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# --- STEP 2: YOUR ORIGINAL FORM CODE (ONLY ONCE) ---
 with st.form("multimodal_prompt_form", clear_on_submit=True):
     st.markdown("<div class='premium-prompt-bar'>", unsafe_allow_html=True)
     col_text_field, col_submit_rocket = st.columns([12, 0.8])
@@ -562,6 +582,7 @@ with st.form("multimodal_prompt_form", clear_on_submit=True):
         
     st.markdown("</div>", unsafe_allow_html=True)
 
+# --- STEP 3: YOUR ORIGINAL PAYLOAD LOGIC (ONLY ONCE) ---
 if file_payload_string and st.session_state.active_payload:
     if not st.session_state.active_payload.endswith(file_payload_string):
         st.session_state.active_payload += file_payload_string
