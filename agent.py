@@ -444,9 +444,10 @@ with col_mic:
         st.session_state.active_payload = voice_text_transcription
 
 # --- CORE PREMIUM CSS OVERRIDE SYSTEM ---
+# --- CORE PREMIUM CSS OVERRIDE SYSTEM ---
 st.markdown("""
 <style>
-    /* 1. FORCE INPUT BOX STYLE & VISIBILITY IN DARK & LIGHT MODE */
+    /* 1. AGGRESSIVE TEXT INPUT TARGETING FOR ADAPTIVE THEMING */
     div[data-baseweb="input"] {
         background-color: var(--input-bg) !important;
         border: 1px solid rgba(128, 128, 128, 0.4) !important;
@@ -455,20 +456,20 @@ st.markdown("""
         transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     
-    /* Target the text input element inside Streamlit's container */
+    /* Force the text input element inside the nested shadow DOM wrapper */
     div[data-baseweb="input"] input {
         color: var(--text-color) !important;
         -webkit-text-fill-color: var(--text-color) !important;
         background-color: transparent !important;
     }
     
-    /* Target placeholder text color rules directly */
+    /* Maintain readability parameters for placeholder strings */
     div[data-baseweb="input"] input::placeholder {
         color: var(--text-color) !important;
         opacity: 0.5 !important;
     }
 
-    /* 2. FIX BUTTON WRAPPING & SPACING ALIGNMENT */
+    /* 2. OPTIMIZED FORM HANDLING LAYOUT & BUTTON ALIGNMENT */
     div[data-testid="stFormSubmitButton"] button {
         width: 100% !important;
         white-space: nowrap !important;
@@ -486,7 +487,7 @@ st.markdown("""
         box-shadow: none !important;
     }
     
-    /* 3. PREMIUM ACCENT CHAT/LOG CARDS */
+    /* 3. COHESIVE LOG & MESSAGE CARD ACCENTS */
     .log-card { 
         background-color: var(--secondary-background-color); 
         color: var(--text-color); 
