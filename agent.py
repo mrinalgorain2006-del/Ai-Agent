@@ -7,18 +7,19 @@ import sqlite3
 import time
 import sys
 import os
-import io  # For handling raw file streams safely
-from ollama import Client
-from streamlit_mic_recorder import speech_to_text
+import io  # For safe in-memory file stream tracking
 
-# Safe import router to capture PDF binary text tracking structures cleanly
+# Silently ignore local self-signed SSL warning flags
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Safe package router to decode binary document stream structures cleanly
 try:
     import pypdf
 except ImportError:
     pypdf = None
 
-# Silently ignore local self-signed SSL warning flags
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from ollama import Client
+from streamlit_mic_recorder import speech_to_text
 
 # =====================================================================
 #  ☀️ INITIALIZATION & EXTRA-PREMIUM VISUAL CSS PACK (RENDER FIRST)
@@ -35,9 +36,6 @@ if "active_display" not in st.session_state:
 if "speed_telemetry" not in st.session_state:
     st.session_state.speed_telemetry = "0.0 tokens/sec"
 
-# =====================================================================
-#  ☀️ ULTRABRIGHT HIGH-CONTRAST LIGHT MODE UI STYLING ENGINE
-# =====================================================================
 st.markdown("""
     <style>
     /* 1. RESET ALL MAIN VIEWPORT CONTAINERS TO LIGHT MODE */
@@ -105,8 +103,10 @@ st.markdown("""
         color: #ffffff !important;
         -webkit-text-fill-color: #ffffff !important;
     }
+    div[data-testid="stForm"] { border: none !important; padding: 0px !important; box-shadow: none !important; }
     </style>
 """, unsafe_allow_html=True)
+chat_bubble_accent = "rgba(0,0,0,0.03)"
 
 # =====================================================================
 #  1. IDENTITY & ENVIRONMENT CONFIGURATION
@@ -352,19 +352,19 @@ def get_world_news(topic: str) -> str:
     except Exception as e:
         return f"❌ News Error: {str(e)}"
 
+# 🌍 HIGH-ACCURACY ZERO-TOKEN LIVE INTERNET EXTRACTION NODE (REPLACED BASIC SCRAPER)
 def query_live_search(query: str) -> str:
     try:
-        search_url = f"https://html.duckduckgo.com/html/?q={requests.utils.quote(query)}"
-        headers = {"User-Agent": "Mozilla/5.0"}
-        response = requests.get(search_url, headers=headers, timeout=6)
-        from bs4 import BeautifulSoup
-        soup = BeautifulSoup(response.text, "html.parser")
-        results = soup.find_all("a", class_="result__snippet")
-        if not results: return get_world_news(query)
-        article_search = f"## 📰 DISPATCH: REAL-TIME SEARCH INDEX MATRIX FOR '{query.upper()}'\n\n"
-        for i, res in enumerate(results[:3]):
-            article_search += f"### Segment {i+1}:\n{res.get_text().strip()}\n\n"
-        return article_search
+        from duckduckgo_search import DDGS
+        with DDGS() as ddgs:
+            results = [r for r in ddgs.text(query, max_results=4)]
+        if not results: 
+            return "⚠️ Search Interruption: No real-time indexed matrices returned."
+        
+        compiled_matrix = f"## 🌍 REAL-TIME SEARCH ENGINE INDEX CONTEXT FOR '{query.upper()}'\n"
+        for idx, item in enumerate(results):
+            compiled_matrix += f"\n### Reference Source {idx+1}:\n* Title: {item.get('title')}\n* Fact Snippet: {item.get('body')}\n"
+        return compiled_matrix
     except Exception as e:
         return f"❌ Search Pipeline Failure: {str(e)}"
 
@@ -408,7 +408,6 @@ with st.sidebar:
         <small style='color: #475569 !important;'>System Evaluation Arrays</small>
     </div>
 """, unsafe_allow_html=True)
-    
     
     st.markdown("---")
     st.markdown("<div style='font-size: 14px; font-weight: 600; color: #4a90e2; margin-top: 15px; margin-bottom: 5px;'>Recent Chats</div>", unsafe_allow_html=True)
@@ -475,7 +474,7 @@ with pill_cols[2]:
 st.markdown("<br>", unsafe_allow_html=True)
 
 # =====================================================================
-#  ⚙️ ENHANCED EXTRACTOR CORE FOR MULTIMODAL DOCS & PDFS
+#  📂 MULTIMODAL DOCUMENT & PDF DATA EXTRACTION ENGINE
 # =====================================================================
 file_payload_string = ""
 voice_text_transcription = None
@@ -488,30 +487,30 @@ with col_file:
     
     if uploaded_doc is not None:
         try:
-            # 📄 PATH A: Handle PDF documents using pypdf text-stream tracking layers
+            # 📄 BRANCH A: Binary PDF Page-by-Page Content Extraction Pipeline
             if uploaded_doc.name.lower().endswith('.pdf'):
                 if pypdf is None:
-                    st.error("❌ System Sync Interrupted: 'pypdf' package is missing from your virtual environment pipeline. Run 'pip install pypdf'.")
+                    st.error("❌ Missing Engine: 'pypdf' library is missing from the virtual environment. Run 'pip install pypdf'.")
                 else:
-                    pdf_stream = io.BytesIO(uploaded_doc.read())
-                    pdf_reader = pypdf.PdfReader(pdf_stream)
+                    pdf_byte_stream = io.BytesIO(uploaded_doc.read())
+                    pdf_data_reader = pypdf.PdfReader(pdf_byte_stream)
                     extracted_pdf_text = ""
-                    for exact_page_num, page_node in enumerate(pdf_reader.pages):
-                        page_text_extracted = page_node.extract_text()
-                        if page_text_extracted:
-                            extracted_pdf_text += f"\n--- Page {exact_page_num + 1} ---\n{page_text_extracted}"
+                    for operational_page_idx, individual_page in enumerate(pdf_data_reader.pages):
+                        raw_page_string = individual_page.extract_text()
+                        if raw_page_string:
+                            extracted_pdf_text += f"\n--- Page {operational_page_idx + 1} ---\n{raw_page_string}"
                     
                     if extracted_pdf_text.strip():
-                        file_payload_string = f"\n\n[SYSTEM ATTACHED PDF CONTEXT DETAILS:\nFilename: {uploaded_doc.name}\nContent:\n{extracted_pdf_text}\n]"
+                        file_payload_string = f"\n\n[SYSTEM ATTACHED FILE CONTEXT DETAILS:\nFilename: {uploaded_doc.name}\nContent:\n{extracted_pdf_text}\n]"
                     else:
-                        st.warning("⚠️ Text Parsing Notification: Attached PDF appears to be empty or contains scanned images only.")
+                        st.warning("⚠️ Reading Warning: Uploaded PDF has no extractable text characters.")
             
-            # 📝 PATH B: Handle code sheets, standard txt logs, web markups and datasets
+            # 📝 BRANCH B: Clean Standard Plain-Text / Code Sheets Processing
             else:
-                file_raw = uploaded_doc.read().decode("utf-8", errors="ignore")
-                file_payload_string = f"\n\n[SYSTEM ATTACHED FILE CONTEXT DETAILS:\nFilename: {uploaded_doc.name}\nContent:\n{file_raw}\n]"
+                decoded_file_content = uploaded_doc.read().decode("utf-8", errors="ignore")
+                file_payload_string = f"\n\n[SYSTEM ATTACHED FILE CONTEXT DETAILS:\nFilename: {uploaded_doc.name}\nContent:\n{decoded_file_content}\n]"
         except Exception as e:
-            st.error(f"Err Parsing Document Node: {str(e)}")
+            st.error(f"❌ Document Parsing Failed: {str(e)}")
 
 with col_mic:
     st.markdown("<div style='font-size: 14px; font-weight: 700; margin-bottom: 6px; color: #0f172a;'>🎙️ Voice Mic</div>", unsafe_allow_html=True)
@@ -523,37 +522,6 @@ with col_mic:
         st.session_state.active_display = voice_text_transcription
         st.session_state.active_payload = voice_text_transcription
 
-# --- FORM BUTTON DESIGN CONSTANTS ---
-st.markdown("""
-<style>
-    div[data-testid="stFormSubmitButton"] button {
-        width: 100% !important;
-        white-space: nowrap !important;
-        border-radius: 14px !important;
-        background-color: #4a90e2 !important;
-        color: white !important;
-        -webkit-text-fill-color: white !important;
-        font-weight: bold !important;
-        height: 46px !important;
-        border: none !important;
-    }
-    div[data-testid="stForm"] { border: none !important; padding: 0px !important; box-shadow: none !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# Form entry callback handler
-def handle_submission_callback():
-    raw_text = st.session_state.gemini_text_box.strip()
-    if raw_text:
-        # If document context exists, merge it cleanly directly on action trigger
-        if file_payload_string:
-            st.session_state.active_display = f"{raw_text} 📎 (Context Attached: {uploaded_doc.name})"
-            st.session_state.active_payload = f"{raw_text} {file_payload_string}"
-        else:
-            st.session_state.active_display = raw_text
-            st.session_state.active_payload = raw_text
-        st.session_state.gemini_text_box = ""
-
 # --- THE PROMPT INPUT FORM BAR ---
 with st.form("multimodal_prompt_form", clear_on_submit=True):
     col_text_field, col_submit_button = st.columns([10.2, 1.8])
@@ -562,7 +530,19 @@ with st.form("multimodal_prompt_form", clear_on_submit=True):
         text_input_query = st.text_input("Prompt Box Field", placeholder="Ask Offline.Ai or utilize speech/document layers...", label_visibility="collapsed", key="gemini_text_box")
         
     with col_submit_button:
-        submit_triggered = st.form_submit_button("Submit 🚀", on_click=handle_submission_callback)
+        submit_triggered = st.form_submit_button("Submit 🚀")
+
+# 🚀 NATIVE PROCESS ROUTER: Bundles textual prompt input and context data files safely on submit action
+if submit_triggered:
+    cleaned_prompt_box_string = text_input_query.strip()
+    if cleaned_prompt_box_string:
+        if file_payload_string and uploaded_doc is not None:
+            st.session_state.active_display = f"{cleaned_prompt_box_string} 📎 (Context Attached: {uploaded_doc.name})"
+            st.session_state.active_payload = f"{cleaned_prompt_box_string} {file_payload_string}"
+        else:
+            st.session_state.active_display = cleaned_prompt_box_string
+            st.session_state.active_payload = cleaned_prompt_box_string
+        st.rerun()
 
 # =====================================================================
 #  5. LIVE AGENT PROCESSING LOOP
@@ -587,6 +567,15 @@ if st.session_state.active_display:
         if client is None:
             response_placeholder.error("❌ Model Integration Sync Offline: Ensure your local Ollama runtime engine is active.")
         else:
+            # 🚀 STAGE 1: TRIGGER SEARCH INTERCEPT ROUTE DIRECTLY BEFORE GENERATION (IF ONLINE)
+            live_web_context = ""
+            if st.session_state.is_online:
+                if cfg_verbose:
+                    log_placeholder.markdown("<div class='log-card'>Thought Trace: Triggering high-accuracy real-time search extraction router...</div>", unsafe_allow_html=True)
+                live_web_context = query_live_search(display_user_query)
+                if cfg_verbose and "REAL-TIME" in live_web_context:
+                    log_placeholder.markdown("<div class='log-card'>Thought Trace: Live web context injected successfully into the reasoning space.</div>", unsafe_allow_html=True)
+
             system_rules = f"""
 You are a premium hybrid AI agent operating smoothly in both online and offline network frames.
 Your name is 'Offline.Ai', developed by Mrinal Gorain, a student of Nalhati Government Polytechnic, Branch of CST.
@@ -596,6 +585,10 @@ PROJECT DOCUMENTATION CREDIT DIRECTIVE:
 
 REQUIRED REINFORCED PERSONA STYLE TONE MATRIX:
 - Current active persona setting to maintain: {cfg_tone}
+
+CRITICAL TRUTH & RECONCILIATION DIRECTIVE:
+- You must prioritize factual truth using the provided real-time search context or attached document content. 
+- If the answer cannot be verified by the context or your local knowledge, say cleanly: "I cannot verify this information with absolute certainty based on current telemetry metrics." Do not invent facts under any circumstances.
 
 CRITICAL MATHEMATICAL LATEX GUARDRAILS:
 - You can solve any complex engineering mathematics step-by-step.
@@ -608,104 +601,42 @@ CRITICAL MULTILINGUAL LANGUAGE MATRIX DIRECTIVE:
   2. If the user asks a question in Hindi OR romanized Hinglish text, translate and reply 100% inside pure HINDI SCRIPT (देवनागरी) only.
   3. If the user asks in standard English, reply in standard English.
 
-CURRENT NETWORK STATE STATUS:
-- System is currently executing inside an ONLINE environment.
+CURRENT REAL-TIME CONTEXT INFORMATION:
+{live_web_context if live_web_context else 'System running on local base knowledge weights.'}
 """
-            if st.session_state.is_online:
-                system_rules += """
-Tools Directory (Active only when Online):
-1. Weather queries: {"tool": "get_live_weather", "argument": "CITY_NAME"}
-2. General topic news: {"tool": "get_world_news", "argument": "TOPIC_KEYWORDS"}
-3. Specific Factual Search: {"tool": "query_live_search", "argument": "SEARCH_KEYWORDS"}
-
-If the request requires live data parameters, you MUST output a tool calling using valid JSON formatting.
-"""
-            else:
-                system_rules += "\nSystem is offline. Solve all math and logical data queries natively via local weights."
 
             agent_context = [{"role": "system", "content": system_rules}]
             for past_msg in st.session_state.chat_history[-4:]:
                 agent_context.append({"role": past_msg["role"], "content": past_msg["content"]})
                 
-            # Safely inject document payload context straight into active window context array
             agent_context.append({"role": "user", "content": final_query_payload})
 
-            running_logs = ""
-            tool_executed = False
-            final_text_output = ""
-            
             try:
-                if st.session_state.is_online:
-                    for processing_step in range(2):
-                        llm_response = client.chat(
-                            model="llama3", 
-                            messages=agent_context,
-                            options={"temperature": 0.1, "num_predict": 100, "top_k": 20, "num_thread": 4}
-                        )
-                        raw_content = llm_response['message']['content'].strip()
-                        try:
-                            tool_call = json.loads(raw_content)
-                            if "tool" in tool_call and tool_call["tool"] in tools_map:
-                                t_name = tool_call["tool"]
-                                t_arg = tool_call["argument"]
-                                if cfg_verbose:
-                                    running_logs += f"Thought Trace: AI deployed tool `{t_name}` for `{t_arg}`.\n\n"
-                                    log_placeholder.markdown(f"<div class='log-card'>{running_logs}</div>", unsafe_allow_html=True)
-                                final_text_output = tools_map[t_name](t_arg)
-                                tool_executed = True
-                                if cfg_verbose:
-                                    running_logs += f"Data Returned Successfully.\n\n"
-                                    log_placeholder.markdown(f"<div class='log-card'>{running_logs}</div>", unsafe_allow_html=True)
-                                break
-                        except json.JSONDecodeError:
-                            break
-                    
-                    if not tool_executed:
-                        user_query_clean = display_user_query.lower()
-                        if any(w_kwd in user_query_clean for w_kwd in ["weather", "temperature", "temp", "rain", "humidity"]):
-                            city_target = "Nalhati"
-                            for word in display_user_query.split():
-                                clean_word = word.strip("?,.!")
-                                if clean_word.title() not in ["Live", "Weather", "Report", "Of", "In", "What", "Is"]:
-                                    city_target = clean_word
-                                    break
-                            final_text_output = get_live_weather(city_target)
-                            tool_executed = True
-                        elif any(f_kwd in user_query_clean for f_kwd in ["cm", "news", "minister", "current affairs"]):
-                            final_text_output = query_live_search(display_user_query)
-                            tool_executed = True
+                start_time = time.time()
+                stats_tracker = [0]
+                
+                def text_stream_generator():
+                    stream_res = client.chat(
+                        model="llama3", 
+                        messages=agent_context, 
+                        stream=True,
+                        options={"temperature": 0.1, "num_thread": 4}
+                    )
+                    yield "<div class='chat-card'>"
+                    for chunk in stream_res:
+                        stats_tracker[0] += 1
+                        yield chunk['message']['content']
+                    yield "</div>"
 
-                if tool_executed:
-                    formatted_tool_output = f"<div class='chat-card'>{final_text_output}</div>"
-                    response_placeholder.markdown(formatted_tool_output, unsafe_allow_html=True)
-                    st.session_state.chat_history.append({"role": "assistant", "content": formatted_tool_output})
-                    save_message("assistant", formatted_tool_output)
-                else:
-                    start_time = time.time()
-                    stats_tracker = [0]
+                full_response = response_placeholder.write_stream(text_stream_generator())
+                elapsed_time = time.time() - start_time
+                if elapsed_time > 0:
+                    st.session_state.speed_telemetry = f"{round(stats_tracker[0] / elapsed_time, 1)} tokens/sec"
                     
-                    def text_stream_generator():
-                        stream_res = client.chat(
-                            model="llama3", 
-                            messages=agent_context, 
-                            stream=True,
-                            options={"temperature": 0.1, "num_thread": 4}
-                        )
-                        yield "<div class='chat-card'>"
-                        for chunk in stream_res:
-                            stats_tracker[0] += 1
-                            yield chunk['message']['content']
-                        yield "</div>"
-
-                    full_response = response_placeholder.write_stream(text_stream_generator())
-                    elapsed_time = time.time() - start_time
-                    if elapsed_time > 0:
-                        st.session_state.speed_telemetry = f"{round(stats_tracker[0] / elapsed_time, 1)} tokens/sec"
-                        
-                    st.session_state.chat_history.append({"role": "assistant", "content": full_response})
-                    save_message("assistant", full_response)
+                st.session_state.chat_history.append({"role": "assistant", "content": full_response})
+                save_message("assistant", full_response)
             except Exception as conn_err:
-                response_placeholder.error(f"⚠️ Runtime Token Decoder Exception.")
+                response_placeholder.error(f"⚠️ Runtime Token Decoder Exception: {str(conn_err)}")
 
         st.components.v1.html("""
             <script>
