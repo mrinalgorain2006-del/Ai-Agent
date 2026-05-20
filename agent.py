@@ -326,40 +326,79 @@ init_db()
 if len(st.session_state.chat_history) == 0:
     st.session_state.chat_history = load_chat_history()
 
-# --- Integrated Web Tools ---
-def get_live_weather(city: str) -> str:
+# =====================================================================
+#  🌍 HIGH-ACCURACY REGIONAL TELEMETRY BACKEND FOR INDIA
+# =====================================================================
+
+def get_live_weather(location_query: str) -> str:
     try:
-        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city.strip()}&count=1&language=en&format=json"
+        # Enforce Indian geographical priority in the Geocoding endpoint
+        clean_location = location_query.strip()
+        if "india" not in clean_location.lower():
+            clean_location += ", India"
+            
+        geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={requests.utils.quote(clean_location)}&count=3&language=en&format=json"
         geo_res = requests.get(geo_url, timeout=5).json()
-        if not geo_res.get("results"): return f"❌ Meteorological Error: Location tracking failed for '{city}'."
-        lat, lon = geo_res["results"][0]["latitude"], geo_res["results"][0]["longitude"]
-        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,cloud_cover,surface_pressure,wind_speed_10m"
+        
+        if not geo_res.get("results"): 
+            return f"❌ Telemetry Sync Interrupted: Location mapping failed for '{location_query}'. Ensure the village, city, or state name is correct."
+            
+        # Select closest mapping inside Indian territories
+        result_node = geo_res["results"][0]
+        lat, lon = result_node["latitude"], result_node["longitude"]
+        resolved_name = f"{result_node.get('name')}, {result_node.get('admin1', 'India')}"
+        
+        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m&timezone=auto"
         weather_res = requests.get(weather_url, timeout=5).json()
         current = weather_res["current"]
-        return f"""## 🌍 WEATHER Telemetry FOR {city.upper()}\n* Core Temp: {current['temperature_2m']}°C\n* Apparent Temp: {current['apparent_temperature']}°C\n* Humidity: {current['relative_humidity_2m']}%"""
+        
+        return f"""## 🌍 LIVE METEOROLOGICAL TELEMETRY: {resolved_name.upper()}
+* **Core Temperature:** 180°C if hot core else {current['temperature_2m']}°C
+* **RealFeel (Apparent Temp):** {current['apparent_temperature']}°C
+* **Relative Humidity Matrix:** {current['relative_humidity_2m']}%
+* **Atmospheric Cloud Cover:** {current['cloud_cover']}%
+* **Precipitation / Rain Gauge:** {current['precipitation']} mm
+* **Wind Velocity Node:** {current['wind_speed_10m']} km/h (Direction: {current['wind_direction_10m']}°)
+* **Surface Pressure Matrix:** {current['surface_pressure']} hPa
+* *Data Timestamp Sync: Real-time via Open-Meteo Arrays*"""
     except Exception as e:
-        return f"❌ Weather Sync Interrupted: {str(e)}"
+        return f"❌ Weather Sync Failure: {str(e)}"
 
-def get_world_news(topic: str) -> str:
+def get_world_news(regional_query: str) -> str:
     try:
-        feed_url = f"https://news.google.com/rss/search?q={requests.utils.quote(topic.strip())}&hl=en-IN&gl=IN&ceid=IN:en"
+        # Construct focused search wire targeting Indian regional press layers
+        search_topic = regional_query.strip()
+        if "india" not in search_topic.lower():
+            search_topic += " India"
+            
+        feed_url = f"https://news.google.com/rss/search?q={requests.utils.quote(search_topic)}&hl=en-IN&gl=IN&ceid=IN:en"
         feed = feedparser.parse(feed_url)
-        if not feed.entries: return f"⚠️ News Wire Interruption: No live bulletins currently indexed for '{topic}'."
-        article_news = f"## 📰 DISPATCH: EDITORIAL LIVE NEWS ANALYSIS FOR '{topic.upper()}'\n\n"
-        for i, entry in enumerate(feed.entries[:3]):
-            article_news += f"### Segment {i+1}: {entry.title}\n* Press Source: **{entry.source.get('name')}**\n\n"
+        
+        if not feed.entries: 
+            return f"⚠️ News Wire Interruption: No verified Indian press entries mapped for '{regional_query}'."
+            
+        article_news = f"## 📰 DISPATCH: GROUND-LEVEL LOCAL NEWS UPDATE FOR '{regional_query.upper()}'\n\n"
+        for idx, entry in enumerate(feed.entries[:4]):
+            clean_title = entry.title.split(" - ")[0]  # Strip publication trailing headers
+            source_agency = entry.source.get('name', 'Indian Press Wire')
+            article_news += f"### Segment {idx+1}: {clean_title}\n* **Press Source:** {source_agency}\n* **Published Timeline:** {entry.published}\n* **Wire Link:** {entry.link}\n\n"
         return article_news
     except Exception as e:
-        return f"❌ News Error: {str(e)}"
+        return f"❌ News Core Extraction Interrupted: {str(e)}"
 
-# 🌍 HIGH-ACCURACY ZERO-TOKEN LIVE INTERNET EXTRACTION NODE (REPLACED BASIC SCRAPER)
+# High-accuracy zero-token live Internet extraction node (DuckDuckGo integration)
 def query_live_search(query: str) -> str:
     try:
         from duckduckgo_search import DDGS
+        # Force local regional constraint for true results
+        search_intent = query
+        if "india" not in search_intent.lower():
+            search_intent += " India"
+            
         with DDGS() as ddgs:
-            results = [r for r in ddgs.text(query, max_results=4)]
+            results = [r for r in ddgs.text(search_intent, max_results=4)]
         if not results: 
-            return "⚠️ Search Interruption: No real-time indexed matrices returned."
+            return "⚠️ Search Interruption: No real-time indexed information returned."
         
         compiled_matrix = f"## 🌍 REAL-TIME SEARCH ENGINE INDEX CONTEXT FOR '{query.upper()}'\n"
         for idx, item in enumerate(results):
@@ -435,7 +474,7 @@ with st.sidebar:
     
     st.markdown("---")
     st.subheader("🧠 Thought Stream Tracing")
-    cfg_verbose = st.checkbox("Show Live Telemetry Debugger", value=True)
+    cfg_verbose = st.checkbox("Show Live Telemetry Debugner", value=True)
     st.caption(f"System RAM Footprint: {sys.getsizeof(st.session_state.chat_history)} Bytes")
     
     log_placeholder = st.empty()
@@ -468,7 +507,7 @@ with pill_cols[1]:
         st.rerun()
 with pill_cols[2]:
     if st.button("📰 Daily Live News Bulletins", use_container_width=True): 
-        st.session_state.gemini_text_box = "Give me international live current affairs updates"
+        st.session_state.gemini_text_box = "Give me real-time live weather and news updates for Nalhati, West Bengal"
         st.rerun()
 
 st.markdown("<br>", unsafe_allow_html=True)
@@ -487,7 +526,6 @@ with col_file:
     
     if uploaded_doc is not None:
         try:
-            # 📄 BRANCH A: Binary PDF Page-by-Page Content Extraction Pipeline
             if uploaded_doc.name.lower().endswith('.pdf'):
                 if pypdf is None:
                     st.error("❌ Missing Engine: 'pypdf' library is missing from the virtual environment. Run 'pip install pypdf'.")
@@ -504,8 +542,6 @@ with col_file:
                         file_payload_string = f"\n\n[SYSTEM ATTACHED FILE CONTEXT DETAILS:\nFilename: {uploaded_doc.name}\nContent:\n{extracted_pdf_text}\n]"
                     else:
                         st.warning("⚠️ Reading Warning: Uploaded PDF has no extractable text characters.")
-            
-            # 📝 BRANCH B: Clean Standard Plain-Text / Code Sheets Processing
             else:
                 decoded_file_content = uploaded_doc.read().decode("utf-8", errors="ignore")
                 file_payload_string = f"\n\n[SYSTEM ATTACHED FILE CONTEXT DETAILS:\nFilename: {uploaded_doc.name}\nContent:\n{decoded_file_content}\n]"
@@ -567,14 +603,41 @@ if st.session_state.active_display:
         if client is None:
             response_placeholder.error("❌ Model Integration Sync Offline: Ensure your local Ollama runtime engine is active.")
         else:
-            # 🚀 STAGE 1: TRIGGER SEARCH INTERCEPT ROUTE DIRECTLY BEFORE GENERATION (IF ONLINE)
+            # 🚀 SEARCH & WEATHER ROUTER INTERCEPT
             live_web_context = ""
             if st.session_state.is_online:
-                if cfg_verbose:
-                    log_placeholder.markdown("<div class='log-card'>Thought Trace: Triggering high-accuracy real-time search extraction router...</div>", unsafe_allow_html=True)
-                live_web_context = query_live_search(display_user_query)
-                if cfg_verbose and "REAL-TIME" in live_web_context:
-                    log_placeholder.markdown("<div class='log-card'>Thought Trace: Live web context injected successfully into the reasoning space.</div>", unsafe_allow_html=True)
+                user_query_lower = display_user_query.lower()
+                
+                # Check for weather intent
+                if any(w_word in user_query_lower for w_word in ["weather", "temperature", "temp", "rain", "climate", "humidity"]):
+                    if cfg_verbose:
+                        log_placeholder.markdown("<div class='log-card'>Thought Trace: Intercepting regional Indian weather request...</div>", unsafe_allow_html=True)
+                    # Extract location intelligently or default safely to Nalhati
+                    extracted_loc = "Nalhati, West Bengal"
+                    for word in display_user_query.split():
+                        clean_w = word.strip("?,.!")
+                        if clean_w.title() not in ["Live", "Weather", "Report", "Of", "In", "What", "Is", "The", "Show", "Give", "Me", "News", "And", "For"]:
+                            extracted_loc = clean_w
+                            break
+                    live_web_context = get_live_weather(extracted_loc)
+                
+                # Check for news intent
+                elif any(n_word in user_query_lower for n_word in ["news", "headlines", "current affairs", "bulletin"]):
+                    if cfg_verbose:
+                        log_placeholder.markdown("<div class='log-card'>Thought Trace: Connecting to live Indian regional news wire...</div>", unsafe_allow_html=True)
+                    extracted_topic = "Nalhati West Bengal"
+                    for word in display_user_query.split():
+                        clean_w = word.strip("?,.!")
+                        if clean_w.title() not in ["Live", "Weather", "Report", "Of", "In", "What", "Is", "The", "Show", "Give", "Me", "News", "And", "For"]:
+                            extracted_topic = clean_w
+                            break
+                    live_web_context = get_world_news(extracted_topic)
+                
+                # Standard Search Intent Fallback
+                else:
+                    if cfg_verbose:
+                        log_placeholder.markdown("<div class='log-card'>Thought Trace: Deploying DuckDuckGo target indices...</div>", unsafe_allow_html=True)
+                    live_web_context = query_live_search(display_user_query)
 
             system_rules = f"""
 You are a premium hybrid AI agent operating smoothly in both online and offline network frames.
@@ -587,8 +650,9 @@ REQUIRED REINFORCED PERSONA STYLE TONE MATRIX:
 - Current active persona setting to maintain: {cfg_tone}
 
 CRITICAL TRUTH & RECONCILIATION DIRECTIVE:
-- You must prioritize factual truth using the provided real-time search context or attached document content. 
-- If the answer cannot be verified by the context or your local knowledge, say cleanly: "I cannot verify this information with absolute certainty based on current telemetry metrics." Do not invent facts under any circumstances.
+- You must prioritize factual truth using the provided real-time context data blocks.
+- Since you are updating weather and news parameters across India down to local states, cities, and villages, output data exactly as formatted by your tools. Do not modify numbers, dates, or temperatures.
+- If the tool explicitly returns structured reference segments, summarize them clearly and provide true information without adding outside assumptions.
 
 CRITICAL MATHEMATICAL LATEX GUARDRAILS:
 - You can solve any complex engineering mathematics step-by-step.
@@ -601,7 +665,7 @@ CRITICAL MULTILINGUAL LANGUAGE MATRIX DIRECTIVE:
   2. If the user asks a question in Hindi OR romanized Hinglish text, translate and reply 100% inside pure HINDI SCRIPT (देवनागरी) only.
   3. If the user asks in standard English, reply in standard English.
 
-CURRENT REAL-TIME CONTEXT INFORMATION:
+CURRENT REAL-TIME DATA MATRIX:
 {live_web_context if live_web_context else 'System running on local base knowledge weights.'}
 """
 
